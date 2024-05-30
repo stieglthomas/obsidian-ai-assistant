@@ -40,7 +40,7 @@ export class Groq {
 		"messages": [
 			{
 				"role": "system", 
-				"content": this.system_message + "; If you have no answer, only respond with 'ERROR'"
+				"content": this.system_message + this.plugin.settings.instruct_general
 			},
 			{
 				"role": "user", 

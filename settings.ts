@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting, Notice, Modal, requestUrl } from 'obsidian';
 
 import MyPlugin from './main';
+import { type } from 'os';
 
 const manifest = require('./manifest.json');
 
@@ -179,15 +180,18 @@ export class ApiKeyModal extends Modal {
 
 
 // Status Bar
-
+let statusBarItem: HTMLElement;
 export function setStatusBar(plugin: MyPlugin) {
-	let statusBarItem = plugin.addStatusBarItem()
+	if (!statusBarItem){
+		statusBarItem = plugin.addStatusBarItem();
+	}
 	statusBarItem.setText(`${plugin.settings.llm_model} (${plugin.settings.temperature})`);
 	statusBarItem.addEventListener("click", evt => {
 		openSettings(this);
 	});
 
 }
+
 
 
 

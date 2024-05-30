@@ -7,16 +7,20 @@ import { Groq } from './groq';
 interface MyPluginSettings {
 	groq_key: string;
 	llm_model: string;
+	instruct_general: string;
 	instruct_summary: string;
 	instruct_keypoint: string;
+	instruct_define: string;
 	temperature: number;
 }
 
 let DEFAULT_SETTINGS: MyPluginSettings = {
 	groq_key: "",
 	llm_model: "",
-	instruct_summary: "Summarize the following text. Answer strictly in the input language",
-	instruct_keypoint: "Identify the key points in the following text. Answer strictly in the input language",
+	instruct_general: "Answer the following question in the input language; Important: If you have no answer, only respond with 'ERROR'",
+	instruct_summary: "Summarize the following text",
+	instruct_keypoint: "Identify the key points in the following text",
+	instruct_define: "Define the following text",
 	temperature: 0.8
 }
 
@@ -49,39 +53,33 @@ export default class MyPlugin extends Plugin {
 		setStatusBar(this);
 
 
-		const summarizer = new Groq(this, this.settings.instruct_summary)
-
-		// this.addCommand({
-		// 	id: 'open-sample-modal-simple',
-		// 	name: 'Open sample modal (simple)',
-		// 	callback: () => {
-		// 		new SampleModal(this.app).open();
-		// 	}
-		// });
-
+		const Summarizer = new Groq(this, this.settings.instruct_summary)
 		this.addCommand({
-			id: 'open-settings',
-			name: 'Open Settings',
-			callback: () => {
-				openSettings(this)
-			}
-		});
-
-
-		// this.addCommand({
-		// 	id: "define-text",
-		// 	name: "Define Text",
-		// 	editorCallback: async (editor: Editor) => {
-		// 		new Notice(editor.getSelection())
-		// 	}
-		// })
-
-
-		this.addCommand({
-			id: "test-ai",
-			name: "Testing AI",
+			id: "create-summary",
+			name: "Create Summary",
 			editorCallback: async (editor: Editor) => {
-				await summarizer.answer(editor)
+				await Summarizer.answer(editor)
+			}
+		})
+
+		const Keypoints = new Groq(this, this.settings.instruct_keypoint)
+
+		this.addCommand({
+			id: "create-keypoints",
+			name: "Create Key Points",
+			editorCallback: async (editor: Editor) => {
+				await Keypoints.answer(editor)
+			}
+		})
+
+
+		const Definer = new Groq(this, this.settings.instruct_define)
+		this.addCommand({
+			id: "define-text",
+			name: "Define Text",
+			editorCallback: async (editor: Editor) => {
+				let answer = await Definer.ask(editor.getSelection())
+				new Notice(answer)
 			}
 		})
 
