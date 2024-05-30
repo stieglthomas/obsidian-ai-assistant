@@ -1,7 +1,7 @@
 {
 	"id": "ai-assistant",
 	"name": "Groq AI-assistant",
-	"version": "1.0.0",
+	"version": "0.2.0",
 	"minAppVersion": "0.15.0",
 	"description": "This plugin adds a simple AI-assistant to your Obsidian notes. It uses the free Groq API to generate summaries, keypoints etc. for your notes.",
 	"author": "Obsidian",
