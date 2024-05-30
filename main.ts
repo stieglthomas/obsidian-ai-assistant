@@ -3,8 +3,10 @@ import { Editor, Notice, Plugin } from 'obsidian';
 import { MainSettingTab, KeylessSettingTab, updateAvalibaleModels, openSettings, setStatusBar} from './settings';
 import { Groq } from './groq';
 
+const languagesDict: { [key: string]: string } = require('./languages.json');
 
 interface MyPluginSettings {
+	language: string;
 	groq_key: string;
 	llm_model: string;
 	instruct_general: string;
@@ -15,9 +17,10 @@ interface MyPluginSettings {
 }
 
 let DEFAULT_SETTINGS: MyPluginSettings = {
+	language: "",
 	groq_key: "",
 	llm_model: "",
-	instruct_general: "Answer the following question in the input language; Important: If you have no answer, only respond with 'ERROR'",
+	instruct_general: "",
 	instruct_summary: "Summarize the following text",
 	instruct_keypoint: "Identify the key points in the following text",
 	instruct_define: "Define the following text",
@@ -26,17 +29,21 @@ let DEFAULT_SETTINGS: MyPluginSettings = {
 
 
 
-
-
-
-
-
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
 
 	async onload() {
-
+		
 		await this.loadSettings();
+
+		const windowLanguage = window.localStorage.getItem('language');
+		if (!this.settings.language) {
+			if(windowLanguage) {
+				this.settings.language =  languagesDict[windowLanguage];
+			} else {
+				this.settings.language = "English";
+			}
+		}
 
 		if (this.settings.groq_key !== "") {
 			if (!await updateAvalibaleModels(this)){
@@ -50,7 +57,8 @@ export default class MyPlugin extends Plugin {
 			return
 		}
 
-		setStatusBar(this);
+		this.saveSettings()
+
 
 
 		const Summarizer = new Groq(this, this.settings.instruct_summary)
@@ -62,26 +70,25 @@ export default class MyPlugin extends Plugin {
 			}
 		})
 
-		const Keypoints = new Groq(this, this.settings.instruct_keypoint)
+		// const Keypoints = new Groq(this, this.settings.instruct_keypoint)
+		// this.addCommand({
+		// 	id: "create-keypoints",
+		// 	name: "Create Key Points",
+		// 	editorCallback: async (editor: Editor) => {
+		// 		await Keypoints.answer(editor)
+		// 	}
+		// })
 
-		this.addCommand({
-			id: "create-keypoints",
-			name: "Create Key Points",
-			editorCallback: async (editor: Editor) => {
-				await Keypoints.answer(editor)
-			}
-		})
 
-
-		const Definer = new Groq(this, this.settings.instruct_define)
-		this.addCommand({
-			id: "define-text",
-			name: "Define Text",
-			editorCallback: async (editor: Editor) => {
-				let answer = await Definer.ask(editor.getSelection())
-				new Notice(answer)
-			}
-		})
+		// const Definer = new Groq(this, this.settings.instruct_define)
+		// this.addCommand({
+		// 	id: "define-text",
+		// 	name: "Define Text",
+		// 	editorCallback: async (editor: Editor) => {
+		// 		let answer = await Definer.ask(editor.getSelection())
+		// 		new Notice(answer)
+		// 	}
+		// })
 
 
 		this.addSettingTab(new MainSettingTab(this.app, this));
@@ -112,7 +119,6 @@ declare module 'obsidian' {
 }
 
 Editor.prototype.createCallout = function(callout: string, title: string, text: string) {
-	console.log("Creating Callout")
 	const cursor = this.getCursor();
 	const lineBreak = cursor.ch === 0 ? '' : '\n\n';
 	this.replaceSelection(`${lineBreak}> [!${callout}]- ${title}\n> ${text}\n\n`);

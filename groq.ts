@@ -30,7 +30,7 @@ export class Groq {
 		if (text === "") {
 			return
 		}
-		editor.createCallout(callout_name, "AI Summary", await this.ask(input))
+		editor.createCallout(callout_name, "AI Summary", text)
 	}
 
 
@@ -41,7 +41,11 @@ export class Groq {
 		"messages": [
 			{
 				"role": "system", 
-				"content": this.system_message + this.plugin.settings.instruct_general
+				"content": `
+					${this.system_message}\n
+					${this.plugin.settings.instruct_general}\n
+					If you have no answer, only respond with 'ERROR'\n
+					Strictly Anwser in ${this.plugin.settings.language}. If you don't speak the language, respond with 'ERROR'`
 			},
 			{
 				"role": "user", 
@@ -60,20 +64,32 @@ export class Groq {
 				body: JSON.stringify(data)
 			})
 
+			if (response.status !== 200) {
+				throw `Error in asking Groq (${response.status})`
+			}
+
+			console.log(response.text)
+
 			let response_message = JSON.parse(response.text).choices[0].message.content
 			response_message = JSON.parse(response.text)
 			response_message = response_message.choices[0].message.content
 
 			if (response_message === "ERROR") {
-				throw new Error("No answer was found")
+				throw "No answer was found"
 			}
 			return response_message
 
 
 		} catch (e) {
-			console.log(e.message)
-			new Notice("Error in asking the AI model")
+			if (typeof e === "string") {
+				new Notice(e)
+				
+			} else {
+				console.log(e.message)
+				new Notice("Error in asking the AI model")
+			}
 			return ""
+
 		}
 	}
 

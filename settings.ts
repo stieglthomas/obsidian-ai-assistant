@@ -4,9 +4,9 @@ import MyPlugin from './main';
 import { Groq } from 'groq';
 
 const manifest = require('./manifest.json');
+const languages = require('./languages.json');
 
 let ai_models : Record<string, string> = {};
-
 
 
 export function openSettings(plugin: MyPlugin) {
@@ -51,6 +51,18 @@ export class MainSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.llm_model)
 				.onChange(async (value) => {
 					this.plugin.settings.llm_model = value;
+					await this.plugin.saveSettings();
+				})
+			);
+			
+		new Setting(containerEl)
+			.setName('Language')
+			.setDesc('Select preferred output language')
+			.addDropdown(dropdown => dropdown
+				.addOptions(languages)
+				.setValue(Object.keys(languages).find(key => languages[key] === this.plugin.settings.language) || "")
+				.onChange(async (value) => {
+					this.plugin.settings.language = languages[value];
 					await this.plugin.saveSettings();
 				})
 			);
