@@ -1,7 +1,7 @@
 import { App, PluginSettingTab, Setting, Notice, Modal, requestUrl } from 'obsidian';
 
 import MyPlugin from './main';
-import { type } from 'os';
+import { Groq } from 'groq';
 
 const manifest = require('./manifest.json');
 
@@ -67,15 +67,35 @@ export class MainSettingTab extends PluginSettingTab {
 				})
 			);
 
+		const Definer = new Groq(this.plugin, this.plugin.settings.instruct_define)
+
 		new Setting(containerEl)
 			.setName('Temperature')
 			.setDesc('Temperature for AI-Model')
 			.addSlider(slider => slider
 				.setValue(this.plugin.settings.temperature)
 				.setLimits(0, 2, 0.1)
+				.setDynamicTooltip()
 				.onChange(async (value) => {
 					this.plugin.settings.temperature = value;
 					await this.plugin.saveSettings();
+					
+				})
+			)
+			.addButton(button => button
+				.setTooltip("Explain")
+				.setIcon("info")
+				.onClick(() => {
+					Definer.show("Define temperature for AI-Model. Explain the range 0-2. Answer simple and short")
+				})
+			)
+		
+		new Setting(containerEl)
+			.setName('Instructions')
+			.addButton(button => button
+				.setButtonText('Change Instructions')
+				.onClick(() => {
+					new ApiInstructModal(this.app, this.plugin).open();
 				})
 			);
 	}
@@ -134,7 +154,6 @@ export class ApiKeyModal extends Modal {
         
         .setName("API Key")
         .addText((text) =>
-            
             text.setValue(this.result)
                 .onChange((value) => {
                     this.result = value
@@ -172,10 +191,84 @@ export class ApiKeyModal extends Modal {
     }
 
     onClose() {
+		let { contentEl } = this;
+		contentEl.empty();
+    }
+}
+
+
+
+export class ApiInstructModal extends Modal {
+    result: string;
+    plugin: MyPlugin;
+
+    constructor(app: App, plugin: MyPlugin) {
+		super(app);
+		this.plugin = plugin;
+    }
+
+    async onOpen() {
+        const { contentEl } = this;
+
+        contentEl.createEl("h3", { text: "Enter Groq API-Key" })
+        contentEl.createEl("p", { text: "You can get the API key from the " }).createEl("a", { text: "Groq website", href: "https://console.groq.com/keys" });
+        
+		let instruct_gerneral = this.plugin.settings.instruct_general || ""
+        new Setting(contentEl)
+			.setName("Summary Instructions")
+			.setClass("instruct_input")
+			.addTextArea((text) =>
+				text.setValue(instruct_gerneral)
+					.onChange((value) => {
+						instruct_gerneral = value
+					}));
+
+
+		const advancedDivHeading = contentEl.createEl("h4", { text: "Advanced Settings" })
+		advancedDivHeading.addEventListener("click", () => {
+			new Notice("Clicked")
+		})
+
+		const advancedDiv = contentEl.createEl("div", { cls: "book" })
+		
+		
+		const generalInstructionsTextArea = new Setting(advancedDiv)
+			.setName("General Instructions")
+			.setClass("instruct_input")
+			.addTextArea((text) =>
+				text.setValue(instruct_gerneral)
+					.setDisabled(true)
+					.onChange((value) => {
+						instruct_gerneral = value
+					}));
+		
+
+        new Setting(contentEl)
+            .addButton((btn) =>
+                btn
+                .setButtonText("Cancel")
+                .onClick(() => {
+                    this.close();
+                }))
+            .addButton((btn) =>
+                btn
+                .setButtonText("Submit")
+                .setCta()
+                .onClick(async() => {
+					this.plugin.settings.instruct_general = instruct_gerneral;
+					await this.plugin.saveSettings();
+					this.close();
+                }))
+            
+    }
+
+    onClose() {
     let { contentEl } = this;
     contentEl.empty();
     }
 }
+
+
 
 
 

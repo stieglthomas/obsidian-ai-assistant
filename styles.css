@@ -2,3 +2,9 @@
     --callout-color: 124, 164, 152;
     --callout-icon: lucide-sparkles;
 }
+
+.instruct_input textarea{
+    resize: vertical;
+    width: 350px;
+    min-height: 70px;
+}

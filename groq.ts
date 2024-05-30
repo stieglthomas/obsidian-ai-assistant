@@ -1,4 +1,4 @@
-import { Editor, requestUrl, Notice } from "obsidian";
+import { App, Editor, requestUrl, Notice, Modal, Setting } from "obsidian";
 import MyPlugin from "main";
 
 export class Groq {
@@ -34,7 +34,8 @@ export class Groq {
 	}
 
 
-	async ask(input: string) {
+	async ask(input: string, temperature?: number) {
+		temperature = temperature || this.temprature
 		this.updateSettings();
 		let data = {
 		"messages": [
@@ -47,7 +48,7 @@ export class Groq {
 				"content": input
 			}
 		],
-			"temperature": this.temprature,
+			"temperature": temperature,
 			"model": this.ai_model
 		}
 
@@ -74,5 +75,23 @@ export class Groq {
 			new Notice("Error in asking the AI model")
 			return ""
 		}
+	}
+
+	async show(input: string) {
+		const modal = new Modal(this.plugin.app);
+		const answer = await this.ask(input, 0.0)
+		modal.onOpen = () => {
+			modal.contentEl.createEl("h3", {text: "Definition"})
+			modal.contentEl.createEl("p", {text: answer})
+			new Setting(modal.contentEl)
+				.addButton((btn) =>
+					btn
+					.setButtonText("Ok")
+					.onClick(() => {
+						modal.close();
+					}))
+		}
+		modal.open()
+		
 	}
 }
