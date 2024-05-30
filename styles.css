@@ -1,0 +1,4 @@
+.callout[data-callout="ai-summary"] {
+    --callout-color: 124, 164, 152;
+    --callout-icon: lucide-sparkles;
+}
