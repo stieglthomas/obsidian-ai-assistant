@@ -1,6 +1,6 @@
 import { Editor, Notice, Plugin } from 'obsidian';
 
-import { MainSettingTab, KeylessSettingTab, updateAvalibaleModels, openSettings, setStatusBar} from './settings';
+import { MainSettingTab, KeylessSettingTab, updateAvalibaleModels, setStatusBar} from './settings';
 import { Groq } from './groq';
 
 const languagesDict: { [key: string]: string } = require('./languages.json');
@@ -16,13 +16,13 @@ interface MyPluginSettings {
 	temperature: number;
 }
 
-let DEFAULT_SETTINGS: MyPluginSettings = {
+export let DEFAULT_SETTINGS: MyPluginSettings = {
 	language: "",
 	groq_key: "",
 	llm_model: "",
-	instruct_general: "",
+	instruct_general: "Add nothing (no intruduction, no conclusion, no personal opinion, no examples, no additional information). Only provide the requested information",
 	instruct_summary: "Summarize the following text",
-	instruct_keypoint: "Identify the key points in the following text",
+	instruct_keypoint: "Summarize the following text into readable key points. Only provide the most important information in bullet points",
 	instruct_define: "Define the following text",
 	temperature: 0.8
 }
@@ -70,14 +70,14 @@ export default class MyPlugin extends Plugin {
 			}
 		})
 
-		// const Keypoints = new Groq(this, this.settings.instruct_keypoint)
-		// this.addCommand({
-		// 	id: "create-keypoints",
-		// 	name: "Create Key Points",
-		// 	editorCallback: async (editor: Editor) => {
-		// 		await Keypoints.answer(editor)
-		// 	}
-		// })
+		const Keypoints = new Groq(this, this.settings.instruct_keypoint)
+		this.addCommand({
+			id: "create-keypoints",
+			name: "Create Key Points",
+			editorCallback: async (editor: Editor) => {
+				await Keypoints.answer(editor)
+			}
+		})
 
 
 		// const Definer = new Groq(this, this.settings.instruct_define)

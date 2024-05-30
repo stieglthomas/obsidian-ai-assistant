@@ -42,10 +42,9 @@ export class Groq {
 			{
 				"role": "system", 
 				"content": `
-					${this.system_message}\n
-					${this.plugin.settings.instruct_general}\n
+					${this.system_message}; ${this.plugin.settings.instruct_general}\n
 					If you have no answer, only respond with 'ERROR'\n
-					Strictly Anwser in ${this.plugin.settings.language}. If you don't speak the language, respond with 'ERROR'`
+					Always and only answer in ${this.plugin.settings.language}. If you don't speak the language, respond with 'ERROR'`
 			},
 			{
 				"role": "user", 
@@ -68,13 +67,12 @@ export class Groq {
 				throw `Error in asking Groq (${response.status})`
 			}
 
-			console.log(response.text)
-
 			let response_message = JSON.parse(response.text).choices[0].message.content
 			response_message = JSON.parse(response.text)
 			response_message = response_message.choices[0].message.content
 
 			if (response_message === "ERROR") {
+				console.log(response.text)
 				throw "No answer was found"
 			}
 			return response_message

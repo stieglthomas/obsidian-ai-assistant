@@ -8,3 +8,7 @@
     width: 350px;
     min-height: 70px;
 }
+
+.api_key_input input{
+    width: 450px;
+}

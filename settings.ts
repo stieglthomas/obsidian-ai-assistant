@@ -1,6 +1,8 @@
 import { App, PluginSettingTab, Setting, Notice, Modal, requestUrl } from 'obsidian';
 
 import MyPlugin from './main';
+import { DEFAULT_SETTINGS } from './main';
+
 import { Groq } from 'groq';
 
 const manifest = require('./manifest.json');
@@ -55,31 +57,9 @@ export class MainSettingTab extends PluginSettingTab {
 				})
 			);
 			
-		new Setting(containerEl)
-			.setName('Language')
-			.setDesc('Select preferred output language')
-			.addDropdown(dropdown => dropdown
-				.addOptions(languages)
-				.setValue(Object.keys(languages).find(key => languages[key] === this.plugin.settings.language) || "")
-				.onChange(async (value) => {
-					this.plugin.settings.language = languages[value];
-					await this.plugin.saveSettings();
-				})
-			);
-		
-		new Setting(containerEl)
-			.setName('System Message')
-			.setDesc('System Message for AI-Model')
-			.addTextArea(textarea => textarea
-				.setPlaceholder('Enter your system message')
-				.setValue(this.plugin.settings.instruct_summary)
-				.onChange(async (value) => {
-					this.plugin.settings.instruct_summary = value;
-					await this.plugin.saveSettings();
-				})
-			);
 
-		const Definer = new Groq(this.plugin, this.plugin.settings.instruct_define)
+
+		//const Definer = new Groq(this.plugin, this.plugin.settings.instruct_define)
 
 		new Setting(containerEl)
 			.setName('Temperature')
@@ -94,13 +74,17 @@ export class MainSettingTab extends PluginSettingTab {
 					
 				})
 			)
-			.addButton(button => button
-				.setTooltip("Explain")
-				.setIcon("info")
-				.onClick(() => {
-					Definer.show("Define temperature for AI-Model. Explain the range 0-2. Answer simple and short")
-				})
-			)
+			// .addButton(button => button
+			// 	.setTooltip("Explain")
+			// 	.setIcon("info")
+			// 	.onClick(() => {
+			// 		Definer.show("Define temperature for AI-Model. Explain the range 0-2. Answer simple and short")
+			// 	})
+			// )
+
+
+
+		
 		
 		new Setting(containerEl)
 			.setName('Instructions')
@@ -165,6 +149,7 @@ export class ApiKeyModal extends Modal {
         new Setting(contentEl)
         
         .setName("API Key")
+		.setClass("api_key_input")
         .addText((text) =>
             text.setValue(this.result)
                 .onChange((value) => {
@@ -222,52 +207,90 @@ export class ApiInstructModal extends Modal {
     async onOpen() {
         const { contentEl } = this;
 
-        contentEl.createEl("h3", { text: "Enter Groq API-Key" })
-        contentEl.createEl("p", { text: "You can get the API key from the " }).createEl("a", { text: "Groq website", href: "https://console.groq.com/keys" });
+		let settings = this.plugin.settings
+        contentEl.createEl("h3", { text: "LLM-System-Instructions" })
+		contentEl.createEl("p", { text: "System-Instruction for different LLM-tasks" })
+
+
+		new Setting(contentEl)
+			.setName("General Instructions")
+			.setClass("instruct_input")
+			.addTextArea((text) =>
+				text.setValue(settings.instruct_general)
+					.setDisabled(true)
+					.onChange((value) => {
+						settings.instruct_general = value
+					}));
+
+		new Setting(contentEl)
+			.setName('Language')
+			.setDesc('Select preferred output language')
+			.addDropdown(dropdown => dropdown
+				.addOptions(languages)
+				.setValue(Object.keys(languages).find(key => languages[key] === this.plugin.settings.language) || "")
+				.onChange(async (value) => {
+					this.plugin.settings.language = languages[value];
+					await this.plugin.saveSettings();
+				})
+			);
         
-		let instruct_gerneral = this.plugin.settings.instruct_general || ""
         new Setting(contentEl)
 			.setName("Summary Instructions")
 			.setClass("instruct_input")
 			.addTextArea((text) =>
-				text.setValue(instruct_gerneral)
+				text.setValue(settings.instruct_summary)
 					.onChange((value) => {
-						instruct_gerneral = value
+						settings.instruct_summary = value
 					}));
 
-
-		const advancedDivHeading = contentEl.createEl("h4", { text: "Advanced Settings" })
-		advancedDivHeading.addEventListener("click", () => {
-			new Notice("Clicked")
-		})
-
-		const advancedDiv = contentEl.createEl("div", { cls: "book" })
-		
-		
-		const generalInstructionsTextArea = new Setting(advancedDiv)
-			.setName("General Instructions")
+		new Setting(contentEl)
+			.setName("Keypoint Instructions")
 			.setClass("instruct_input")
 			.addTextArea((text) =>
-				text.setValue(instruct_gerneral)
-					.setDisabled(true)
+				text.setValue(settings.instruct_keypoint)
 					.onChange((value) => {
-						instruct_gerneral = value
+						settings.instruct_keypoint = value
 					}));
-		
+
+		new Setting(contentEl)
+			.setName("Define Instructions")
+			.setClass("instruct_input")
+			.addTextArea((text) =>
+				text.setValue(settings.instruct_define)
+					.onChange((value) => {
+						settings.instruct_define = value
+					}));
+
+
 
         new Setting(contentEl)
-            .addButton((btn) =>
-                btn
-                .setButtonText("Cancel")
-                .onClick(() => {
-                    this.close();
-                }))
+			.addButton((btn) =>
+				btn
+				.setButtonText("Cancel")
+				.onClick(() => {
+					this.close();
+				}))
+			.addButton((btn) =>
+				btn
+				.setButtonText("Restore Defaults")
+				.setWarning()
+				.onClick(() => {
+					if (!confirm("Are you sure you want to restore default settings?")) {
+						return
+					}
+					settings.instruct_summary = DEFAULT_SETTINGS.instruct_summary
+					settings.instruct_keypoint = DEFAULT_SETTINGS.instruct_keypoint
+					settings.instruct_define = DEFAULT_SETTINGS.instruct_define
+					settings.instruct_general = DEFAULT_SETTINGS.instruct_general
+					this.close();
+					this.open();
+				}))
+
             .addButton((btn) =>
                 btn
                 .setButtonText("Submit")
                 .setCta()
                 .onClick(async() => {
-					this.plugin.settings.instruct_general = instruct_gerneral;
 					await this.plugin.saveSettings();
 					this.close();
                 }))
